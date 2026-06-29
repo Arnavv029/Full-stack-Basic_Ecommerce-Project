@@ -1,6 +1,6 @@
 from rest_framework.response import Response 
-from .models import Category, Product, UserProfile, Order, OrderItem 
-from .serializers import CategorySerializer, ProductSerializer
+from .models import Category, Product, UserProfile, Order, OrderItem, Card, Carditem
+from .serializers import CategorySerializer, ProductSerializer, CardItemSerializer, CardSerializer
 from rest_framework.decorators import api_view 
 
 @api_view(['GET']) 
@@ -26,5 +26,30 @@ def get_categories(request):
     serializer = CategorySerializer(categories, many=True) 
     return Response(serializer.data) 
 
+@api_view(['GET'])
+def get_card(request): 
+    card, created = Card.objects.get_or_create(user=None)
+    serillizers = CardSerializer(card)
+    return Response(serillizers.data)
 
+@api_view(['POST'])
+def add_to_card(request):
+    product_id = request.data.get('product_id')
+    product = Product.objects.get(id=product_id)
+    card, created = Card.objects.get_or_create(user=None)
+    item, created =  Carditem.objects.get_or_create(card=Card, product=product)
+
+    if not created : 
+
+        item.quantity += 1 
+        item.save 
+
+    return Response({'message' : 'product is sucessfully added'})
+
+
+@api_view(['POST'])
+def remove_from_card(request):
+    item_id = request.data.get('item_id')
+    Carditem.objects.filter(id=item_id).delete()
+    return Response({'message':'items is sucessfully remove from card'})
 
