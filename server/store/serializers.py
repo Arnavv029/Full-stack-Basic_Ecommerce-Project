@@ -24,10 +24,14 @@ class CardItemSerializer(serializers.ModelSerializer):
 
 class CardSerializer(serializers.ModelSerializer):
 
-    item = CardItemSerializer(many = True , read_only = True )
-    total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only = True )
+    items = CardItemSerializer(
+        many=True,
+        read_only=True
+    )
 
-    class Meta : 
-        model = Card 
-        fields = '__all__' 
+    total = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Card
+        fields = '__all__'
 

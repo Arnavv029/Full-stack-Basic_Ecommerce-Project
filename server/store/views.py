@@ -37,7 +37,7 @@ def add_to_card(request):
     product_id = request.data.get('product_id')
     product = Product.objects.get(id=product_id)
     card, created = Card.objects.get_or_create(user=None)
-    item, created =  Carditem.objects.get_or_create(card=Card, product=product)
+    item, created =  Carditem.objects.get_or_create(card=card, product=product)
 
     if not created : 
 
