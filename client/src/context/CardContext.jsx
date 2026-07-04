@@ -1,33 +1,85 @@
-import { createContext, useContext, useState} from 'react'; 
+import { createContext, useContext, useEffect, useState} from 'react'; 
 
 const CardContext = createContext()
 
 export const CartProvider = ({children}) => {
 
+    const BASEURL = import.meta.env.VITE_DJANGO_BASE_URL
     const [cartItems, setCartitems ] = useState([])
+    const [total, setTotal] = useState(0)
 
-    const Addtocard = (product) => {
-        const exiting = cartItems.find((item) => item.id == product.id)
+    const fetchCard = async() => {
+        try{ 
+            const res = await fetch(`${BASEURL}/api/card/`)
+            if(!res.ok){ 
+                throw new Error("Failed To fetch api ")
+            }
 
-        if(exiting){ 
-            setCartitems( cartItems.map((item) => 
-                item.id === product.id ? {...item, quantity: item.quantity + 1 } : item
-            ))
+            const data = await res.json()
+            setCartitems(data.items || [])
+            setTotal(data.total || [])
         }
-        else{ 
-            setCartitems([...cartItems, {...product, quantity:1}])
+        catch(error){ 
+            console.log("Error fetching card", error);
         }
     }
 
-    const Removeitems = (id) => { 
-        setCartitems( cartItems.filter((item) => item.id != id) )
+    useEffect(() => {
+        fetchCard()
+    } ,[])
+
+    const Addtocard = async(product) => {
+
+        try {
+        await fetch(`${BASEURL}/api/card/add/`, { 
+            method:"POST",
+            headers: {
+                "Content-Type" : "application/json"
+            },
+            body: JSON.stringify({product_id:product.id}),
+        }); fetchCard() }
+        
+        catch(error){
+            console.log("Error fetching card", error);
+        }
     }
 
-    const Updatequantity = (id, quantity) => { 
-        setCartitems(cartItems.map((item) => (item.id === id) ? {...item, quantity} : item  ))
+    const Removeitems = async(id) => { 
+        try{ 
+            await fetch(`${BASEURL}/api/card/remove/`, {
+                method:"POST",
+                headers:{ 
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify({item_id:id})
+            }); fetchCard()
+        }
+        catch(error){ 
+            console.log("Error fetching card", error);
+        }
     }
 
-    return <CardContext.Provider value={{cartItems, Addtocard, Removeitems, Updatequantity}}> 
+    const Updatequantity = async(id, quantity) => { 
+
+        if (quantity < 1){ 
+            Removeitems(id)
+        }
+
+        try{ 
+            await fetch(`${BASEURL}/api/update/`, { 
+                method:"POST",
+                headers:{ 
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify({item_id:id, quantity:quantity})
+            }); fetchCard()
+        }
+        catch(error){ 
+            console.log("Error fetching card", error);
+        }
+    }
+
+    return <CardContext.Provider value={{cartItems, total, Addtocard, Removeitems, Updatequantity}}> 
             {children}
     </CardContext.Provider>
 

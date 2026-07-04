@@ -8,4 +8,6 @@ urlpatterns = [
     path('card/', views.get_card),
     path('card/add/', views.add_to_card),
     path('card/remove/', views.remove_from_card),
+    path('update/', views.update_card_quantity),
+    path('order/create/', views.order_create),
 ]

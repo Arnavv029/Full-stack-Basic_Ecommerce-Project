@@ -3,8 +3,9 @@ import { useCard } from '../context/CardContext'
 
 const Cardpage = () => {
 
-    const {cartItems, Removeitems, Updatequantity} = useCard() 
-    const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
+    const BASEURL = import.meta.env.VITE_DJANGO_BASE_URL
+    const {cartItems, total, Removeitems, Updatequantity} = useCard() 
+    // const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
   return (
 
@@ -17,8 +18,13 @@ const Cardpage = () => {
                 {cartItems.map((item) => (
                     <div key={item.id} className='flex items-center justify-between mb-4'>
                         <div>
-                            <h2 className='text-lg font-semibold'>{item.name}</h2>
-                            <p className='text-gray-600'>Price: ${item.price}</p>
+                            <h2 className='text-lg font-semibold'>{item.product_name}</h2>
+                            <p className='text-gray-600'>Price: ${item.product_price}</p>
+                        </div>
+                        <div className='flex items-center gap-4'>
+                            {item.product_image && (
+                                <img src={`${BASEURL}${item.product_image}`} alt={item.product_name} className='w-16 h-16 object-cover rounded-lg' />
+                            )}
                         </div>
                         <div className='flex items-center gap-3'>
                             <button onClick={() => Updatequantity(item.id, item.quantity - 1)} className='bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition'>

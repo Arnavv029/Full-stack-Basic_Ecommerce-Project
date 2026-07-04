@@ -42,7 +42,7 @@ def add_to_card(request):
     if not created : 
 
         item.quantity += 1 
-        item.save 
+        item.save()
 
     return Response({'message' : 'product is sucessfully added'})
 
@@ -53,3 +53,63 @@ def remove_from_card(request):
     Carditem.objects.filter(id=item_id).delete()
     return Response({'message':'items is sucessfully remove from card'})
 
+@api_view(['POST'])
+def update_card_quantity(request) : 
+
+    item_id = request.data.get('item_id')
+    quantity = request.data.get('quantity')
+
+    if not item_id or quantity is None : 
+        return Response({"error": "item id and quantity is requert" }, status=400)
+    
+    try: 
+        item = Carditem.objects.get(id=item_id)
+        if int(quantity) < 1 : 
+            item.delete()
+            return Response({"error" : "quantity must be atleast 1" }, status=400)
+
+        item.quantity = quantity
+        item.save()
+        serillizer = CardItemSerializer(item)
+        return Response(serillizer.data)
+
+    except Carditem.DoesNotExist : 
+        return Response({"error" : "Card item not find"}, status=404)
+
+@api_view(['POST'])
+def order_create(request): 
+    try: 
+        data = request.data
+        name = data.get('name')
+        address = data.get('address')
+        phone = data.get('phone')
+        payment = data.get('payment_method', 'cod')
+
+        card = Card.objects.first()
+
+        if not card or not card.items.exists():
+            return Response({"error": "Card is empty"}, status=400) 
+        
+        total_price = sum(item.product.price * item.quantity for item in card.items.all())
+
+        # Create the order 
+        order = Order.objects.create( 
+            user=None,
+            total_amount=total_price
+        )
+
+        # Create order items 
+        for item in card.items.all(): 
+            order_item = OrderItem.objects.create( 
+                order = order,
+                product = item.product,
+                quantity = item.quantity,
+                price = item.product.price
+            )
+
+        # Clear the card after creating the order
+        card.items.all().delete() 
+        return Response({"message": "Order created successfully"}, status=500)
+    
+    except Exception as e : 
+        return Response({"error": str(e)},  status=201)
