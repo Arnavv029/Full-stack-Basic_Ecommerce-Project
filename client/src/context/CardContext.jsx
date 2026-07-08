@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState} from 'react'; 
+import { authFetch, getAccessToken } from '../utils/auth'; 
+
 
 const CardContext = createContext()
 
@@ -9,15 +11,21 @@ export const CartProvider = ({children}) => {
     const [total, setTotal] = useState(0)
 
     const fetchCard = async() => {
+        if (!getAccessToken()) {
+            setCartitems([])
+            setTotal(0)
+            return
+        }
+
         try{ 
-            const res = await fetch(`${BASEURL}/api/card/`)
+            const res = await authFetch(`${BASEURL}/api/card/`)
             if(!res.ok){ 
                 throw new Error("Failed To fetch api ")
             }
 
             const data = await res.json()
             setCartitems(data.items || [])
-            setTotal(data.total || [])
+            setTotal(data.total || 0)
         }
         catch(error){ 
             console.log("Error fetching card", error);
@@ -26,18 +34,31 @@ export const CartProvider = ({children}) => {
 
     useEffect(() => {
         fetchCard()
+
+        const handleAuthChange = () => fetchCard()
+        window.addEventListener('auth-changed', handleAuthChange)
+
+        return () => window.removeEventListener('auth-changed', handleAuthChange)
     } ,[])
 
-    const Addtocard = async(product) => {
+    const Addtocard = async(productOrId) => {
+        const productId = typeof productOrId === 'object' ? productOrId?.id : productOrId
+
+        if (!productId) {
+            console.error('Product id is missing')
+            return
+        }
 
         try {
-        await fetch(`${BASEURL}/api/card/add/`, { 
-            method:"POST",
-            headers: {
-                "Content-Type" : "application/json"
-            },
-            body: JSON.stringify({product_id:product.id}),
-        }); fetchCard() }
+            await authFetch(`${BASEURL}/api/card/add/`, { 
+                method:"POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify({product_id: productId}),
+            })
+            fetchCard()
+        }
         
         catch(error){
             console.log("Error fetching card", error);
@@ -46,7 +67,7 @@ export const CartProvider = ({children}) => {
 
     const Removeitems = async(id) => { 
         try{ 
-            await fetch(`${BASEURL}/api/card/remove/`, {
+            await authFetch(`${BASEURL}/api/card/remove/`, {
                 method:"POST",
                 headers:{ 
                     "Content-Type" : "application/json"
@@ -66,7 +87,7 @@ export const CartProvider = ({children}) => {
         }
 
         try{ 
-            await fetch(`${BASEURL}/api/update/`, { 
+            await authFetch(`${BASEURL}/api/update/`, { 
                 method:"POST",
                 headers:{ 
                     "Content-Type" : "application/json"
@@ -79,7 +100,12 @@ export const CartProvider = ({children}) => {
         }
     }
 
-    return <CardContext.Provider value={{cartItems, total, Addtocard, Removeitems, Updatequantity}}> 
+    const ClearCard = () => {
+        setCartitems([])
+        setTotal(0)
+    }
+
+    return <CardContext.Provider value={{cartItems, total, Addtocard, Removeitems, Updatequantity, ClearCard}}> 
             {children}
     </CardContext.Provider>
 
