@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 @api_view(['GET']) 
 def get_products(request):
     products = Product.objects.all()  
-    serializer = ProductSerializer(products, many=True) 
+    serializer = ProductSerializer(products, many=True, context={'request': request}) 
     return Response(serializer.data) 
 
 @api_view(['GET']) 
@@ -32,7 +32,7 @@ def get_categories(request):
 @permission_classes([IsAuthenticated])
 def get_card(request): 
     card, created = Card.objects.get_or_create(user=request.user)
-    serillizers = CardSerializer(card)
+    serillizers = CardSerializer(card, context={'request': request})
     return Response(serillizers.data)
 
 @api_view(['POST'])
@@ -76,7 +76,7 @@ def update_card_quantity(request) :
 
         item.quantity = quantity
         item.save()
-        serillizer = CardItemSerializer(item)
+        serillizer = CardItemSerializer(item, context={'request': request})
         return Response(serillizer.data)
 
     except Carditem.DoesNotExist : 
