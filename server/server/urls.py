@@ -24,5 +24,7 @@ urlpatterns = [
     path('api/', include('store.urls'))
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# In some simple hosting setups (e.g. Render without separate media hosting)
+# allow Django to serve media files. In production it's recommended to
+# serve media via a dedicated storage (S3, CDN) instead of the Django app.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
